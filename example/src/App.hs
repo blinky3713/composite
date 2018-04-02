@@ -19,8 +19,8 @@ import Servant.Swagger.UI (swaggerSchemaUIServer)
 
 -- |Perform app initialization and then begin serving the API
 startApp :: IO ()
-startApp = do
-  withLogger $
+startApp =
+  withLogger $ do
     metrics <- liftIO configureMetrics
     withPostgresqlPool "host=localhost port=5432 user=example dbname=example" 5 $ \ connPool -> do
       let appData = AppData connPool metrics
