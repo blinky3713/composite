@@ -33,7 +33,7 @@ makeTupleDefaults = traverse makeTupleDefault [2..59]
   where
     makeTupleDefault arity = do
       names <- traverse (newName . ("a" ++) . show) [1..arity]
-      let constraints = map (\ n -> appT (conT djfClassName) (varT n)) names
+      let constraints = map (appT (conT djfClassName) . varT) names
           instanceHead = appT (conT djfClassName) (pure $ foldl' AppT (TupleT arity) (map VarT names))
           implName = mkName $ "Composite.Aeson.Formats.Provided.tuple" <> show arity <> "JsonFormat"
       instanceD (cxt constraints) instanceHead
@@ -64,9 +64,9 @@ makeTupleFormats = concat <$> traverse makeTupleFormat [2..59]
             ForallT
               (PlainTV tyErrName : map PlainTV tyNames)
               []
-              (foldr (\ l r -> AppT (AppT ArrowT (AppT (AppT (ConT ''JsonFormat) (VarT tyErrName)) l)) r)
+              (foldr ((\l r -> AppT (AppT ArrowT (AppT (AppT (ConT ''JsonFormat) (VarT tyErrName)) l)) r) . VarT)
                      (AppT (AppT (ConT ''JsonFormat) (VarT tyErrName)) tupleType)
-                     (map VarT tyNames))
+                     tyNames)
           oTupImpl =
             lamE
               [conP (tupleDataName arity) (map varP valNames)]

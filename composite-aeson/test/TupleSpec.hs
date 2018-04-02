@@ -9,7 +9,7 @@ import Test.QuickCheck (property)
 
 tupleSuite :: Spec
 tupleSuite =
-  describe "Tuple formats" $ do
+  describe "Tuple formats" $
     it "works for 3-tuples" $ do
       let fmt = tuple3JsonFormat (integralJsonFormat :: JsonFormat Void Int) stringJsonFormat charJsonFormat
       property $ \ t ->

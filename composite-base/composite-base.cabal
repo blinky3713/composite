@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2618bea197d35bcbfa54da654a7ac6b494be054ccf4a1c58b235c2464847b49b
+-- hash: eb70888c84d617aea8a40064e7082c8764b0dbf55e0f63b715bf7ef847800b4b
 
 name:           composite-base
 version:        0.5.3.0
@@ -29,6 +29,7 @@ library
     , monad-control
     , mtl
     , profunctors
+    , singletons
     , template-haskell
     , text
     , transformers
@@ -61,6 +62,7 @@ test-suite composite-base-test
     , monad-control
     , mtl
     , profunctors
+    , singletons
     , template-haskell
     , text
     , transformers

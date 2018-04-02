@@ -10,7 +10,7 @@ import Composite.Record ((:->), Record, rlens)
 import Control.Lens (Prism', _1, _head, each, over, toListOf)
 import Data.Char (toLower)
 import Data.List (foldl')
-import Data.Maybe (catMaybes)
+import Data.Maybe (mapMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy (Proxy(Proxy))
 import Data.Vinyl (RecApplicative)
@@ -153,7 +153,7 @@ withBoilerplate :: Bool -> Bool -> Q [Dec] -> Q [Dec]
 withBoilerplate generateLenses generatePrisms qDecs = do
   decs <- qDecs
 
-  let fieldDecs = catMaybes . map fieldDecMay . toListOf (each . _TySynD) $ decs
+  let fieldDecs = mapMaybe fieldDecMay . toListOf (each . _TySynD) $ decs
 
   proxyDecs <- traverse proxyDecFor fieldDecs
   lensDecs  <- if generateLenses then traverse lensDecFor  fieldDecs else pure []
@@ -167,7 +167,7 @@ fieldDecMay (fieldName, fieldBinders, ty) = case ty of
     let fieldTypeApplied         = foldl' AppT (ConT fieldName) (map binderTy fieldBinders)
         binderTy (PlainTV n')    = VarT n'
         binderTy (KindedTV n' _) = VarT n'
-    in Just $ FieldDec {..}
+    in Just FieldDec{..}
   _ ->
     Nothing
 
@@ -177,7 +177,7 @@ prismNameFor = mkName . ("_" ++) . nameBase
 proxyNameFor = mkName . (++ "_") . over _head toLower . nameBase
 
 proxyDecFor :: FieldDec -> Q [Dec]
-proxyDecFor (FieldDec { fieldName, fieldTypeApplied }) = do
+proxyDecFor FieldDec{ fieldName, fieldTypeApplied } = do
   let proxyName = proxyNameFor fieldName
 
   proxyType <- [t|Proxy $(pure fieldTypeApplied)|]
@@ -189,7 +189,7 @@ proxyDecFor (FieldDec { fieldName, fieldTypeApplied }) = do
     ]
 
 lensDecFor :: FieldDec -> Q [Dec]
-lensDecFor (FieldDec {..}) = do
+lensDecFor FieldDec{..} = do
   f  <- newName "f"
   rs <- newName "rs"
 
@@ -211,7 +211,7 @@ lensDecFor (FieldDec {..}) = do
     ]
 
 prismDecFor :: FieldDec -> Q [Dec]
-prismDecFor (FieldDec {..}) = do
+prismDecFor FieldDec {..} = do
   rs <- newName "rs"
 
   let rsTy                    = varT rs

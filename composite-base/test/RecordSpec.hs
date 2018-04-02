@@ -12,7 +12,7 @@ withLensesAndProxies [d|
 type TestRec = '["foo" :-> Int, "bar" :-> String]
 
 recordSuite :: Spec
-recordSuite = do
+recordSuite =
   describe "Basic record utilities" $ do
     it "Supports construction and deconstruction of a Rec Identity" $ do
       let rec = 123 :*: "foo" :*: RNil :: Record TestRec

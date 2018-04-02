@@ -4,7 +4,7 @@ module Composite.Record
   , pattern (:*:), pattern (:^:)
   , (:->)(Val, getVal), _Val, val, valName, valWithName
   , RElem, rlens, rlens'
-  , AllHave, HasInstances, ValuesAllHave
+  , AllHave, HasInstances
   , zipRecsWith, reifyDicts, recordToNonEmpty
   , ReifyNames(reifyNames)
   , RecWithContext(rmapWithContext)
@@ -82,7 +82,7 @@ instance Monad ((:->) s) where
   Val a >>= k = k a
   {-# INLINE (>>=) #-}
 
-instance forall (s :: Symbol) a. (KnownSymbol s, Show a) => Show (s :-> a) where
+instance (KnownSymbol s, Show a) => Show (s :-> a) where
   showsPrec p (Val a) = ((symbolVal (Proxy :: Proxy s) ++ " :-> ") ++) . showsPrec p a
 
 -- |Convenience function to make an @'Identity' (s ':->' a)@ with a particular symbol, used for named field construction.
@@ -112,7 +112,7 @@ instance forall (s :: Symbol) a. (KnownSymbol s, Show a) => Show (s :-> a) where
 --
 -- In this example, both @myRecord1@ and @myRecord2@ have the same value, since 'Data.Vinyl.Lens.rcast' can reorder records.
 val :: forall (s :: Symbol) a. a -> Identity (s :-> a)
-val = Identity . Val @s
+val = Identity . Val
 
 -- |Reflect the type level name of a named value @s :-> a@ to a @Text@. For example, given @"foo" :-> Int@, yields @"foo" :: Text@
 valName :: forall s a. KnownSymbol s => s :-> a -> Text
@@ -134,7 +134,7 @@ valWithName v = (valName v, getVal v)
 -- @
 --
 -- Mnemonic: @*@ for products.
-pattern (:*:) :: () => () => a -> Rec Identity rs -> Rec Identity (s :-> a ': rs)
+pattern (:*:) :: a -> Rec Identity rs -> Rec Identity (s :-> a ': rs)
 pattern (:*:) a rs = Identity (Val a) :& rs
 infixr 5 :*:
 
@@ -148,7 +148,7 @@ infixr 5 :*:
 -- @
 --
 -- Mnemonic: @^@ for products (record) of products (functor).
-pattern (:^:) :: Functor f => () => f a -> Rec f rs -> Rec f (s :-> a ': rs)
+pattern (:^:) :: Functor f => f a -> Rec f rs -> Rec f (s :-> a ': rs)
 pattern (:^:) fa rs <- (fmap getVal -> fa) :& rs where
   (:^:) fa rs = fmap Val fa :& rs
 infixr 5 :^:
@@ -174,7 +174,7 @@ infixr 5 :^:
 --   set  (rlens fBar_) "goodbye!"    rec == 123 :*: "goodbye!" :*: Nil
 --   over (rlens fBar_) (map toUpper) rec == 123 :*: "HELLO!"   :*: Nil
 -- @
-rlens :: (Functor g, RElem (s :-> a) rs, Functor g) => proxy (s :-> a) -> (a -> g a) -> Rec Identity rs -> g (Rec Identity rs)
+rlens :: (Functor g, RElem (s :-> a) rs) => proxy (s :-> a) -> (a -> g a) -> Rec Identity rs -> g (Rec Identity rs)
 rlens proxy f =
   Vinyl.rlens proxy $ \ (Identity (Val a)) ->
     Identity . Val <$> f a
@@ -201,7 +201,7 @@ rlens proxy f =
 --   set  (rlens' fBar_) Nothing              rec == Just 123 :^: Nothing       :^: Nil
 --   over (rlens' fBar_) (fmap (map toUpper)) rec == Just 123 :^: Just "HELLO!" :^: Nil
 -- @
-rlens' :: (Functor f, Functor g, RElem (s :-> a) rs, Functor g) => proxy (s :-> a) -> (f a -> g (f a)) -> Rec f rs -> g (Rec f rs)
+rlens' :: (Functor f, Functor g, RElem (s :-> a) rs) => proxy (s :-> a) -> (f a -> g (f a)) -> Rec f rs -> g (Rec f rs)
 rlens' proxy f =
   Vinyl.rlens proxy $ \ (fmap getVal -> fa) ->
     fmap Val <$> f fa
@@ -230,15 +230,6 @@ type family AllHave (cs :: [u -> Constraint]) (as :: [u]) :: Constraint where
   AllHave cs      '[]  = ()
   AllHave cs (a ': as) = (HasInstances a cs, AllHave cs as)
 
--- |Type function which produces the cross product of constraints @cs@ and the values carried in a record @rs@.
---
--- For example, @ValuesAllHave '[Eq, Ord] '["foo" :-> Int, "bar" :-> Text]@ is equivalent to @(Eq Int, Ord Int, Eq Text, Ord Text)@
-type family ValuesAllHave (cs :: [u -> Constraint]) (as :: [u]) :: Constraint where
-  ValuesAllHave cs            '[]  = ()
-  ValuesAllHave cs (s :-> a ': as) = (HasInstances a cs, ValuesAllHave cs as)
-
-
--- |Given a list of constraints @cs@, apply some function for each @r@ in the target record type @rs@ with proof that those constraints hold for @r@,
 -- generating a record with the result of each application.
 reifyDicts
   :: forall (cs :: [u -> Constraint]) (f :: u -> *) (rs :: [u]) (proxy :: [u -> Constraint] -> *).

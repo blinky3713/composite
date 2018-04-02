@@ -30,21 +30,21 @@ type ForSelect5 = '[FBar, FFoo   , FQux, FBaz   ]
 type ForUpdate5 = '[FBar, FFooMay, FQux, FBazMay]
 
 updateSuite :: Spec
-updateSuite = do
+updateSuite =
   describe "Composite.Opaleye.Update" $ do
-    it "should compute the update version of an empty record" $ do
+    it "should compute the update version of an empty record" $
       recordToUpdate (                                                     RNil :: Record ForSelect1)
         `shouldBe`   (                                                     RNil :: Record ForUpdate1)
-    it "should compute the update version of a record with no defaulted fields" $ do
+    it "should compute the update version of a record with no defaulted fields" $
       recordToUpdate ("hi"                                             :*: RNil :: Record ForSelect2)
         `shouldBe`   ("hi"                                             :*: RNil :: Record ForUpdate2)
-    it "should compute the update version of a record with a defaulted field" $ do
+    it "should compute the update version of a record with a defaulted field" $
       recordToUpdate (     123                                         :*: RNil :: Record ForSelect3)
         `shouldBe`   (Just 123                                         :*: RNil :: Record ForUpdate3)
-    it "should compute the update version of a record with mixed fields" $ do
+    it "should compute the update version of a record with mixed fields" $
       recordToUpdate (     123 :*: "hi" :*:      Nothing :*: Just True :*: RNil :: Record ForSelect4)
         `shouldBe`   (Just 123 :*: "hi" :*: Just Nothing :*: Just True :*: RNil :: Record ForUpdate4)
-    it "should compute the update version of a record with mixed fields and different ordering" $ do
+    it "should compute the update version of a record with mixed fields and different ordering" $
       recordToUpdate ("hi" :*:      123 :*: Just True :*:      Nothing :*: RNil :: Record ForSelect5)
         `shouldBe`   ("hi" :*: Just 123 :*: Just True :*: Just Nothing :*: RNil :: Record ForUpdate5)
 

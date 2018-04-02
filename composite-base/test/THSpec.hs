@@ -56,16 +56,16 @@ thSuite = do
           rb2 :: Record '[FParameterizedRec Bool]
           rb2 = rb :*: RNil
 
-      view (                                  (fParameterized  @Int )) ra  `shouldBe` 123
-      view (                            rlens (fParameterized_ @Int )) ra  `shouldBe` 123
-      view (                                  (fParameterized  @Bool)) rb  `shouldBe` True
-      view (                            rlens (fParameterized_ @Bool)) rb  `shouldBe` True
-      view (      (fParameterizedRec  @Int ). (fParameterized  @Int )) ra2 `shouldBe` 123
-      view (rlens (fParameterizedRec_ @Int ). (fParameterized  @Int )) ra2 `shouldBe` 123
-      view (      (fParameterizedRec  @Bool). (fParameterized  @Bool)) rb2 `shouldBe` True
-      view (rlens (fParameterizedRec_ @Bool). (fParameterized  @Bool)) rb2 `shouldBe` True
+      view (fParameterized  @Int ) ra `shouldBe` 123
+      view (rlens (fParameterized_ @Int)) ra `shouldBe` 123
+      view (fParameterized  @Bool) rb `shouldBe` True
+      view (rlens (fParameterized_ @Bool) rb) `shouldBe` True
+      view (fParameterizedRec @Int . fParameterized  @Int) ra2 `shouldBe` 123
+      view (rlens (fParameterizedRec_ @Int ). fParameterized  @Int) ra2 `shouldBe` 123
+      view (fParameterizedRec  @Bool . fParameterized  @Bool) rb2 `shouldBe` True
+      view (rlens (fParameterizedRec_ @Bool). fParameterized  @Bool) rb2 `shouldBe` True
 
-  describe "withOpticsAndProxies" $ do
+  describe "withOpticsAndProxies" $
     it "works for simple fields" $ do
       let f :: Field '[FOptical]
           f = field (Val 123 :: FOptical)

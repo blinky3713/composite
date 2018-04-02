@@ -19,8 +19,8 @@ makeWrapped ''TestRecJson
 makeToSchema "TestRecJson" ''TestRecJson
 
 thSuite :: Spec
-thSuite = do
-  describe "Swagger Record Support" $ do
+thSuite =
+  describe "Swagger Record Support" $
     it "encodes all fields" $ do
       let x = TestRecJson $ 1 :*: "a" :*: RNil
       validateToJSON x `shouldBe` mempty

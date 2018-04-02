@@ -16,6 +16,7 @@ dependencies:
   - monad-control
   - mtl
   - profunctors
+  - singletons
   - template-haskell
   - text
   - transformers
