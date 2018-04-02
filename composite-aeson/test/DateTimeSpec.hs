@@ -1,12 +1,13 @@
 module DateTimeSpec where
 
-import Composite.Aeson (parseJsonWithFormat', toJsonWithFormat)
-import Composite.Aeson.Formats.DateTime (iso8601DateTimeJsonFormat)
-import Data.Aeson.Types (parseEither)
-import Data.Aeson.QQ (aesonQQ)
-import Data.Time.Calendar (Day(ModifiedJulianDay))
-import Data.Time.Clock (UTCTime(UTCTime))
-import Test.Hspec (Spec, describe, it, shouldBe)
+import           Composite.Aeson                  (parseJsonWithFormat',
+                                                   toJsonWithFormat)
+import           Composite.Aeson.Formats.DateTime (iso8601DateTimeJsonFormat)
+import           Data.Aeson.QQ                    (aesonQQ)
+import           Data.Aeson.Types                 (parseEither)
+import           Data.Time.Calendar               (Day (ModifiedJulianDay))
+import           Data.Time.Clock                  (UTCTime (UTCTime))
+import           Test.Hspec                       (Spec, describe, it, shouldBe)
 
 
 testDate :: UTCTime
