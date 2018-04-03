@@ -1,7 +1,6 @@
 module Composite.Opaleye.TH where
 
 import Composite.Opaleye.Util (constantColumnUsing)
-import Control.Lens ((<&>))
 import qualified Data.ByteString.Char8 as BSC8
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
@@ -153,7 +152,7 @@ deriveOpaleyeEnum hsName sqlName hsConToSqlValue = do
     s <- newName "s"
     let body = lamE [varP s] $
           caseE (varE s) $
-            conPairs <&> \ (conName, value) ->
+            conPairs <&> \(conName, value) ->
               match
                 (conP conName [])
                 (normalB $ lift value)
@@ -168,3 +167,6 @@ deriveOpaleyeEnum hsName sqlName hsConToSqlValue = do
 
   pure [sqlTypeDecl, fromFieldInst, queryRunnerColumnDefaultInst, defaultInst]
 
+
+(<&>) :: Functor f => f a -> (a -> b) -> f b
+(<&>) = flip fmap

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a1c620c148c581c5ae4fe885f39c181f2a5ccea5e701717b1e162c6d884211bd
+-- hash: a8fdefc0b3ed2125562b8c049a032431187c09a085e4ee51699d8c06946ca5a6
 
 name:           composite-opaleye
 version:        0.5.3.0
@@ -26,14 +26,12 @@ library
       base >=4.7 && <5
     , bytestring
     , composite-base
-    , lens
     , opaleye
     , postgresql-simple
     , product-profunctors
     , profunctors
     , template-haskell
     , text
-    , vinyl
   exposed-modules:
       Composite.Opaleye
       Composite.Opaleye.ProductProfunctors
@@ -59,14 +57,12 @@ test-suite composite-opaleye-test
     , composite-base
     , composite-opaleye
     , hspec
-    , lens
     , opaleye
     , postgresql-simple
     , product-profunctors
     , profunctors
     , template-haskell
     , text
-    , vinyl
   other-modules:
       UpdateSpec
       Paths_composite_opaleye
