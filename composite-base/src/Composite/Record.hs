@@ -5,7 +5,7 @@ module Composite.Record
   , (:->)(Val, getVal), _Val, val, valName, valWithName
   , RElem, rlens, rlens'
   , AllHave, HasInstances
-  , zipRecsWith, reifyDicts, recordToNonEmpty
+  , zipRecsWith, recordToNonEmpty
   , ReifyNames(reifyNames)
   , RecWithContext(rmapWithContext)
   , RDelete, RDeletable, rdelete
@@ -20,7 +20,7 @@ import Data.Proxy (Proxy(Proxy))
 import Data.Semigroup (Semigroup)
 import Data.String (IsString)
 import Data.Text (Text, pack)
-import Data.Vinyl (Rec((:&), RNil), RecApplicative, rcast, recordToList, rpure)
+import Data.Vinyl (Rec((:&), RNil), rcast, recordToList)
 import qualified Data.Vinyl as Vinyl
 import Data.Vinyl.Functor (Compose(Compose), Const(Const), (:.))
 import Data.Vinyl.Lens (type (∈), type (⊆))
@@ -229,20 +229,6 @@ type family HasInstances (a :: u) (cs :: [u -> Constraint]) :: Constraint where
 type family AllHave (cs :: [u -> Constraint]) (as :: [u]) :: Constraint where
   AllHave cs      '[]  = ()
   AllHave cs (a ': as) = (HasInstances a cs, AllHave cs as)
-
--- generating a record with the result of each application.
-reifyDicts
-  :: forall (cs :: [u -> Constraint]) (f :: u -> *) (rs :: [u]) (proxy :: [u -> Constraint] -> *).
-     (AllHave cs rs, RecApplicative rs)
-  => proxy cs
-  -> (forall proxy' (a :: u). HasInstances a cs => proxy' a -> f a)
-  -> Rec f rs
-reifyDicts _ f = go (rpure (Const ()))
-  where
-    go :: forall (rs' :: [u]). AllHave cs rs' => Rec (Const ()) rs' -> Rec f rs'
-    go RNil = RNil
-    go ((_ :: Const () a) :& xs) = f (Proxy @a) :& go xs
-{-# INLINE reifyDicts #-}
 
 -- |Class which reifies the symbols of a record composed of ':->' fields as 'Text'.
 class ReifyNames (rs :: [*]) where

@@ -4,7 +4,7 @@
 module Composite.CoRecord where
 
 import Prelude
-import Composite.Record (AllHave, HasInstances, (:->)(getVal, Val), reifyDicts, val, zipRecsWith)
+import Composite.Record (AllHave, HasInstances, (:->)(getVal, Val), val, zipRecsWith)
 import Control.Lens (Prism', prism')
 import Data.Functor.Identity (Identity(Identity), runIdentity)
 import Data.Kind (Constraint)
@@ -237,3 +237,17 @@ widenField :: (FoldRec ss ss, RecApplicative rs, RecApplicative ss, rs ⊆ ss) =
 widenField r =
   fromMaybe (error "widenField should be provably total, isn't") $
     firstField (rreplace (fieldToRec r) (rpure Nothing))
+
+-- generating a record with the result of each application.
+reifyDicts
+  :: forall (cs :: [u -> Constraint]) (f :: u -> *) (rs :: [u]) (proxy :: [u -> Constraint] -> *).
+     (AllHave cs rs, RecApplicative rs)
+  => proxy cs
+  -> (forall proxy' (a :: u). HasInstances a cs => proxy' a -> f a)
+  -> Rec f rs
+reifyDicts _ f = go (rpure (Const ()))
+  where
+    go :: forall (rs' :: [u]). AllHave cs rs' => Rec (Const ()) rs' -> Rec f rs'
+    go RNil = RNil
+    go ((_ :: Const () a) :& xs) = f (Proxy @a) :& go xs
+{-# INLINE reifyDicts #-}
