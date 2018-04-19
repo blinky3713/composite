@@ -1,9 +1,10 @@
 {-# LANGUAGE UndecidableInstances #-} -- argh, for ReifyNames
+{-# LANGUAGE ScopedTypeVariables #-} -- argh, for ReifyNames
 module Composite.Record
-  ( Rec((:&), RNil), Record
+  ( Rec((:&), RNil), Record, ARecord
   , pattern (:*:), pattern (:^:)
   , (:->)(Val, getVal), _Val, val, valName, valWithName
-  , RElem, rlens, rlens'
+  , RElem, rlens, alens, rlens', alens'
   , AllHave, HasInstances, ValuesAllHave
   , zipRecsWith, reifyDicts, recordToNonEmpty
   , ReifyNames(reifyNames)
@@ -22,8 +23,12 @@ import Data.String (IsString)
 import Data.Text (Text, pack)
 import Data.Vinyl (Rec((:&), RNil), RecApplicative, rcast, recordToList, rpure)
 import qualified Data.Vinyl as Vinyl
+import qualified Data.Vinyl.ARec as ARec
 import Data.Vinyl.Functor (Compose(Compose), Const(Const), (:.))
 import Data.Vinyl.Lens (type (∈), type (⊆))
+import Data.Vinyl.TypeLevel (NatToInt, RIndex)
+
+
 import qualified Data.Vinyl.TypeLevel as Vinyl
 import Foreign.Storable (Storable)
 import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
@@ -32,6 +37,8 @@ import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
 
 -- |The type of regular plain records where each field has a value, equal to @'Rec' 'Identity'@.
 type Record = Rec Identity
+
+type ARecord = ARec.ARec Identity
 
 -- |Constraint expressing that @r@ is in @rs@ and providing the index of @r@ in @rs@. Equal to @'Vinyl.RElem' rs ('Vinyl.RIndex' r rs)@.
 type RElem r rs = Vinyl.RElem r rs (Vinyl.RIndex r rs)
@@ -180,6 +187,10 @@ rlens proxy f =
     Identity . Val <$> f a
 {-# INLINE rlens #-}
 
+alens :: forall s a g rs proxy. (Functor g, NatToInt (RIndex (s :-> a) rs), Functor g) => proxy (s :-> a) -> (a -> g a) -> ARec.ARec Identity rs -> g (ARec.ARec Identity rs)
+alens _ f = ARec.alens $ \(Identity (Val a :: s :-> a)) -> Identity . Val <$> f a
+{-# INLINE alens #-}
+
 -- |Lens to a particular field of a record using any functor.
 --
 -- For example, given:
@@ -206,6 +217,10 @@ rlens' proxy f =
   Vinyl.rlens proxy $ \ (fmap getVal -> fa) ->
     fmap Val <$> f fa
 {-# INLINE rlens' #-}
+
+alens' :: forall s a g rs proxy. (Functor g, NatToInt (RIndex (s :-> a) rs), Functor g) => proxy (s :-> a) -> (a -> g a) -> ARec.ARec Identity rs -> g (ARec.ARec Identity rs)
+alens' _ f = ARec.alens $ \(Identity (Val a :: s :-> a)) -> Identity . Val <$> f a
+{-# INLINE alens' #-}
 
 -- | 'zipWith' for Rec's.
 zipRecsWith :: (forall a. f a -> g a -> h a) -> Rec f as -> Rec g as -> Rec h as

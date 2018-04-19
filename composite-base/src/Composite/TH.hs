@@ -6,7 +6,7 @@ module Composite.TH
   ) where
 
 import Composite.CoRecord (Field, fieldValPrism)
-import Composite.Record ((:->), Record, rlens)
+import Composite.Record ((:->), Record, ARecord, rlens, alens)
 import Control.Lens (Prism', _1, _head, each, over, toListOf)
 import Data.Char (toLower)
 import Data.List (foldl')
@@ -14,6 +14,7 @@ import Data.Maybe (catMaybes)
 import Data.Monoid ((<>))
 import Data.Proxy (Proxy(Proxy))
 import Data.Vinyl (RecApplicative)
+import Data.Vinyl.TypeLevel (NatToInt, RIndex)
 import Data.Vinyl.Lens (type (∈))
 import Language.Haskell.TH
   ( Q, newName, mkName, nameBase
@@ -66,7 +67,7 @@ withProxies qDecs = do
 --
 -- @
 --   withLensesAndProxies [d|
---     type FFoo = "foo" :-> Int
+--     typeFFoo = "foo" :-> Int
 --     |]
 -- @
 --
@@ -157,9 +158,10 @@ withBoilerplate generateLenses generatePrisms qDecs = do
 
   proxyDecs <- traverse proxyDecFor fieldDecs
   lensDecs  <- if generateLenses then traverse lensDecFor  fieldDecs else pure []
+  alensDecs  <- if generateLenses then traverse alensDecFor fieldDecs else pure []
   prismDecs <- if generatePrisms then traverse prismDecFor fieldDecs else pure []
 
-  pure $ decs <> concat proxyDecs <> concat lensDecs <> concat prismDecs
+  pure $ decs <> concat proxyDecs <> concat lensDecs <> concat alensDecs <> concat prismDecs
 
 fieldDecMay :: (Name, [TyVarBndr], Type) -> Maybe FieldDec
 fieldDecMay (fieldName, fieldBinders, ty) = case ty of
@@ -171,8 +173,9 @@ fieldDecMay (fieldName, fieldBinders, ty) = case ty of
   _ ->
     Nothing
 
-lensNameFor, prismNameFor, proxyNameFor :: Name -> Name
+lensNameFor, alensNameFor, prismNameFor, proxyNameFor :: Name -> Name
 lensNameFor  = mkName . over _head toLower . nameBase
+alensNameFor  = mkName . ("a" ++) . over _head toLower . nameBase
 prismNameFor = mkName . ("_" ++) . nameBase
 proxyNameFor = mkName . (++ "_") . over _head toLower . nameBase
 
@@ -209,6 +212,29 @@ lensDecFor (FieldDec {..}) = do
     , SigD lensName (ForallT lensBinders lensContext lensType)
     , ValD (VarP lensName) (NormalB rlensVal) []
     ]
+
+alensDecFor :: FieldDec -> Q [Dec]
+alensDecFor (FieldDec {..}) = do
+  f  <- newName "f"
+  rs <- newName "rs"
+
+  let fTy                     = varT f
+      rsTy                    = varT rs
+      proxyName               = proxyNameFor fieldName
+      alensName               = alensNameFor fieldName
+      proxyVal                = VarE proxyName
+      lensBinders             = fieldBinders ++ [PlainTV f, PlainTV rs]
+
+  lensContext <- cxt [ [t| Functor $fTy |], [t| NatToInt (RIndex $(pure fieldTypeApplied) $rsTy) |] ]
+  lensType    <- [t| ($(pure fieldValueType) -> $fTy $(pure fieldValueType)) -> (ARecord $rsTy -> $fTy (ARecord $rsTy)) |]
+  rlensVal    <- [| alens $(pure proxyVal) |]
+
+  pure
+    [ PragmaD (InlineP alensName Inlinable FunLike AllPhases)
+    , SigD alensName (ForallT lensBinders lensContext lensType)
+    , ValD (VarP alensName) (NormalB rlensVal) []
+    ]
+
 
 prismDecFor :: FieldDec -> Q [Dec]
 prismDecFor (FieldDec {..}) = do
