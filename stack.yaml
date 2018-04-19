@@ -1,4 +1,4 @@
-resolver: lts-11.2
+resolver: lts-11.5
 packages:
   - composite-aeson
   - composite-aeson-refined
@@ -8,6 +8,8 @@ packages:
   - composite-swagger
   - example
 flags: {}
+extra-deps:
+  - vinyl-0.8.1.1
 extra-package-dbs: []
 nix:
   packages:
