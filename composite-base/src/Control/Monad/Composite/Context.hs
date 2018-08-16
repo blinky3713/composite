@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE UndecidableInstances #-}
 -- Required to make passthrough instances for MonadContext for things like ReaderT work as they do not satisfy the functional dependency | m -> c
 
@@ -37,6 +38,12 @@ import qualified Control.Monad.Writer.Lazy as Lazy
 import qualified Control.Monad.Writer.Strict as Strict
 import Control.Monad.Writer.Class (MonadWriter(writer, tell, listen, pass))
 import Data.Monoid (Monoid)
+
+#if MIN_VERSION_unliftio_core(0,1,1)
+import Control.Monad.IO.Unlift (askUnliftIO, MonadUnliftIO, UnliftIO(UnliftIO), unliftIO, withUnliftIO, withRunInIO)
+#else
+import Control.Monad.IO.Unlift (askUnliftIO, MonadUnliftIO, UnliftIO(UnliftIO), unliftIO, withUnliftIO)
+#endif
 
 -- |Class of monad (stacks) which have context reading functionality baked in. Similar to 'Control.Monad.Reader.MonadReader' but can coexist with a
 -- another monad that provides 'Control.Monad.Reader.MonadReader' and requires the context to be a record.
@@ -161,6 +168,19 @@ instance MonadBaseControl b m => MonadBaseControl b (ContextT c m) where
     ContextT $ \ c ->
       liftBaseWith $ \ runInBase ->
         f (runInBase . ($ c) . runContextT)
+
+instance MonadUnliftIO m => MonadUnliftIO (ContextT c m) where
+  {-# INLINE askUnliftIO #-}
+  askUnliftIO = ContextT $ \c ->
+                withUnliftIO $ \u ->
+                return (UnliftIO (unliftIO u . flip runContextT c))
+#if MIN_VERSION_unliftio_core(0,1,1)
+  {-# INLINE withRunInIO #-}
+  withRunInIO inner =
+    ContextT $ \c ->
+    withRunInIO $ \run ->
+    inner (run . flip runContextT c)
+#endif
 
 instance MonadReader r m => MonadReader r (ContextT c m) where
   ask    = lift ask
